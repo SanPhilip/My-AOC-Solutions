@@ -27,9 +27,26 @@ bool check_pline(FILE *data, long prevline, int col, int ndigits)
     return false;
 }
 
+bool check_nline(FILE *data, long curpos, int col, int ndigits)
+{
+    fseek(data, curpos, SEEK_SET);
+
+    char c;
+    while((c = fgetc(data)) != '\n'){}
+
+    for(int i = 0; i < col; ++i)
+    {
+        c = fgetc(data);
+        if(i >= col-(ndigits+2))
+            if((c != '.' && c != '\n') && !(c >= '0' && c <= '9'))
+                return true;
+    }
+    return false;
+}
+
 int main()
 {
-    const char *fname = "input.txt";
+    const char *fname = "sampleinput.txt";
     FILE *data = NULL;
     data = fopen(fname, "r");
 
@@ -64,28 +81,33 @@ int main()
             col = 0;
         }
 
-        /* if(symbol && num == 0) symbol = false; */
+        if(symbol && num == 0) symbol = false;
 
-        /* if(c != '.' && c != '\n') */
-        /* { */
-        /*     symbol = true; */
-        /*     if(num == 0) continue; */
-        /* } */
+        if(c != '.' && c != '\n')
+        {
+            symbol = true;
+            if(num == 0) continue;
+        }
 
         curpos = ftell(data);
 
-        if(num != 0)
+        if(num != 0 && !symbol)
+        {
             symbol = check_pline(data, prevline, col, ndigits);
+
+            if(!symbol)
+                symbol = check_nline(data, curpos, col, ndigits);
+
+            fseek(data, curpos, SEEK_SET);
+        }
 
         if(symbol)
         {
             sol += num;
             symbol = false;
-            printf("%d\n", num);
         }
-
-        fseek(data, curpos, SEEK_SET);
 
         num = 0;
     }
+    printf("Day 3 part 1 solution: %d\n", sol);
 }
